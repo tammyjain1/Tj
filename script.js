@@ -1,295 +1,287 @@
-/* =========================================
-   REGISTER GSAP
-========================================= */
-
 gsap.registerPlugin(ScrollTrigger);
 
-
-/* =========================================
-   PRELOADER
-========================================= */
-
-const preloader = document.querySelector(".preloader");
-const loaderNumber = document.querySelector("#loaderNumber");
-const loaderProgress = document.querySelector(".loader-progress");
-
-let loaderObject = {
-    value: 0
-};
-
-const loaderAnimation = gsap.to(loaderObject, {
-
-    value: 100,
-
-    duration: 2.6,
-
-    ease: "power2.inOut",
-
-    onUpdate: () => {
-
-        loaderNumber.textContent =
-            String(Math.floor(loaderObject.value))
-                .padStart(2, "0");
-
-        loaderProgress.style.width =
-            `${loaderObject.value}%`;
-
-    },
-
-    onComplete: () => {
-
-        gsap.to(preloader, {
-
-            yPercent: -100,
-
-            duration: 1.2,
-
-            ease: "power4.inOut",
-
-            onComplete: () => {
-
-                preloader.style.display = "none";
-
-                document.body.classList.add("loaded");
-
-                startWebsiteAnimations();
-
-            }
-
-        });
-
-    }
-
-});
-
-
-/* =========================================
-   LENIS SMOOTH SCROLL
-========================================= */
+/* =====================================================
+   LENIS — SINGLE RAF LOOP
+===================================================== */
 
 const lenis = new Lenis({
-
-    duration: 1.2,
-
+    duration: 1.35,
     smoothWheel: true,
-
-    touchMultiplier: 1.5
-
+    smoothTouch: false,
+    wheelMultiplier: 0.85,
+    touchMultiplier: 1.1,
+    easing: (t) => 1 - Math.pow(1 - t, 4)
 });
-
-
-function raf(time) {
-
-    lenis.raf(time);
-
-    requestAnimationFrame(raf);
-
-}
-
-requestAnimationFrame(raf);
-
-
-/* Connect Lenis + ScrollTrigger */
 
 lenis.on("scroll", ScrollTrigger.update);
 
 gsap.ticker.add((time) => {
-
     lenis.raf(time * 1000);
-
 });
 
 gsap.ticker.lagSmoothing(0);
 
 
-/* =========================================
+/* =====================================================
+   PRELOADER
+===================================================== */
+
+const preloader = document.querySelector(".preloader");
+const loaderNumber = document.querySelector("#loaderNumber");
+const loaderProgress = document.querySelector(".loader-progress");
+
+const loader = {
+    value: 0
+};
+
+gsap.to(loader, {
+    value: 100,
+    duration: 2.4,
+    ease: "power3.inOut",
+
+    onUpdate: () => {
+
+        const value = Math.floor(loader.value);
+
+        loaderNumber.textContent =
+            String(value).padStart(2, "0");
+
+        loaderProgress.style.width =
+            `${value}%`;
+    },
+
+    onComplete: () => {
+
+        const intro = gsap.timeline();
+
+        intro
+        .to(".preloader-top, .preloader-bottom", {
+            opacity: 0,
+            duration: .4
+        })
+
+        .to(".loader-counter", {
+            scale: 1.3,
+            opacity: 0,
+            duration: .6,
+            ease: "power3.in"
+        })
+
+        .to(preloader, {
+            yPercent: -100,
+            duration: 1.2,
+            ease: "expo.inOut"
+        })
+
+        .set(preloader, {
+            display: "none"
+        })
+
+        .add(() => {
+            startAnimations();
+        });
+    }
+});
+
+
+/* =====================================================
    CUSTOM CURSOR
-========================================= */
+===================================================== */
 
 const cursor = document.querySelector(".cursor");
 
-let mouseX = 0;
-let mouseY = 0;
+let mouse = {
+    x: window.innerWidth / 2,
+    y: window.innerHeight / 2
+};
 
-let cursorX = 0;
-let cursorY = 0;
+let cursorPosition = {
+    x: mouse.x,
+    y: mouse.y
+};
 
 window.addEventListener("mousemove", (e) => {
 
-    mouseX = e.clientX;
-    mouseY = e.clientY;
+    mouse.x = e.clientX;
+    mouse.y = e.clientY;
 
 });
 
-function cursorAnimation() {
+function updateCursor() {
 
-    cursorX += (mouseX - cursorX) * 0.12;
+    cursorPosition.x +=
+        (mouse.x - cursorPosition.x) * 0.15;
 
-    cursorY += (mouseY - cursorY) * 0.12;
+    cursorPosition.y +=
+        (mouse.y - cursorPosition.y) * 0.15;
 
-    cursor.style.left = `${cursorX}px`;
-    cursor.style.top = `${cursorY}px`;
+    gsap.set(cursor, {
+        x: cursorPosition.x,
+        y: cursorPosition.y
+    });
 
-    requestAnimationFrame(cursorAnimation);
-
+    requestAnimationFrame(updateCursor);
 }
 
-cursorAnimation();
+updateCursor();
 
 
-/* Hover cursor */
+/* =====================================================
+   MAGNETIC ELEMENTS
+===================================================== */
 
-document.querySelectorAll("a, button, .project, .service")
-.forEach(element => {
+document
+.querySelectorAll(".contact-button, .view-all, .text-link, .menu-button")
+.forEach((element) => {
 
-    element.addEventListener("mouseenter", () => {
+    element.addEventListener("mousemove", (e) => {
+
+        const rect = element.getBoundingClientRect();
+
+        const x =
+            e.clientX - rect.left - rect.width / 2;
+
+        const y =
+            e.clientY - rect.top - rect.height / 2;
+
+        gsap.to(element, {
+            x: x * .15,
+            y: y * .15,
+            duration: .5,
+            ease: "power3.out"
+        });
 
         cursor.classList.add("active");
-
     });
 
     element.addEventListener("mouseleave", () => {
 
-        cursor.classList.remove("active");
+        gsap.to(element, {
+            x: 0,
+            y: 0,
+            duration: .8,
+            ease: "elastic.out(1, .4)"
+        });
 
+        cursor.classList.remove("active");
     });
 
 });
 
 
-/* =========================================
-   WEBSITE ANIMATIONS
-========================================= */
+/* =====================================================
+   CURSOR PROJECT INTERACTION
+===================================================== */
 
-function startWebsiteAnimations() {
+document
+.querySelectorAll(".project")
+.forEach((project) => {
+
+    project.addEventListener("mouseenter", () => {
+        cursor.classList.add("active");
+    });
+
+    project.addEventListener("mouseleave", () => {
+        cursor.classList.remove("active");
+    });
+
+});
 
 
-    /* -------------------------------------
-       HERO WORD REVEAL
-    ------------------------------------- */
+/* =====================================================
+   MAIN ANIMATION
+===================================================== */
 
-    const heroWords =
-        document.querySelectorAll(".reveal-word");
+function startAnimations() {
 
-    gsap.from(heroWords, {
 
-        yPercent: 120,
+    /* =================================================
+       HERO — CINEMATIC REVEAL
+    ================================================= */
 
+    const heroTimeline = gsap.timeline();
+
+    heroTimeline
+
+    .from(".hero-intro", {
+        y: 30,
+        opacity: 0,
+        duration: 1.2,
+        ease: "power4.out"
+    })
+
+    .from(".hero-location", {
+        y: 20,
+        opacity: 0,
+        duration: 1,
+        ease: "power4.out"
+    }, "-=.9");
+
+
+    /* Split-like word animation */
+
+    gsap.from(".reveal-word", {
+
+        yPercent: 130,
+        rotationX: 20,
+        opacity: 0,
+
+        duration: 1.6,
+
+        stagger: .12,
+
+        ease: "expo.out",
+
+        delay: .15
+
+    });
+
+
+    /* Pills */
+
+    gsap.from(".hero-pill", {
+
+        scale: .4,
+        rotation: 15,
+        opacity: 0,
+
+        duration: 1.4,
+
+        stagger: .12,
+
+        ease: "elastic.out(1, .55)",
+
+        delay: .5
+
+    });
+
+
+    /* Floating objects */
+
+    gsap.from(".floating-element", {
+
+        scale: 0,
         opacity: 0,
 
         duration: 1.5,
 
         stagger: .15,
 
-        ease: "power4.out"
+        ease: "back.out(2)",
+
+        delay: .7
 
     });
 
 
-    /* -------------------------------------
-       HERO PILLS
-    ------------------------------------- */
-
-    gsap.from(".hero-pill", {
-
-        scale: 0,
-
-        opacity: 0,
-
-        rotation: 30,
-
-        duration: 1,
-
-        delay: .5,
-
-        stagger: .2,
-
-        ease: "back.out(1.7)"
-
-    });
-
-
-    /* -------------------------------------
-       HERO FLOATING ELEMENTS
-    ------------------------------------- */
-
-    gsap.from(".floating-element", {
-
-        scale: 0,
-
-        opacity: 0,
-
-        duration: 1,
-
-        delay: .8,
-
-        stagger: .2,
-
-        ease: "back.out(2)"
-
-    });
-
-
-    /* -------------------------------------
-       FLOATING MOTION
-    ------------------------------------- */
-
-    gsap.to(".float-one", {
-
-        y: -20,
-
-        rotation: -4,
-
-        duration: 2.5,
-
-        repeat: -1,
-
-        yoyo: true,
-
-        ease: "sine.inOut"
-
-    });
-
-
-    gsap.to(".float-two", {
-
-        y: 25,
-
-        rotation: 20,
-
-        duration: 3,
-
-        repeat: -1,
-
-        yoyo: true,
-
-        ease: "sine.inOut"
-
-    });
-
-
-    gsap.to(".float-three", {
-
-        y: -15,
-
-        duration: 2,
-
-        repeat: -1,
-
-        yoyo: true,
-
-        ease: "sine.inOut"
-
-    });
-
-
-    /* -------------------------------------
-       HERO PARALLAX
-    ------------------------------------- */
+    /* =================================================
+       HERO SCROLL MOTION
+    ================================================= */
 
     gsap.to(".hero-title", {
 
-        yPercent: -15,
+        yPercent: -18,
+        scale: .88,
 
         scrollTrigger: {
 
@@ -299,30 +291,45 @@ function startWebsiteAnimations() {
 
             end: "bottom top",
 
-            scrub: true
+            scrub: 1.5
 
         }
 
     });
 
 
-    /* -------------------------------------
-       STATEMENT REVEAL
-    ------------------------------------- */
+    gsap.to(".hero-top", {
 
-    gsap.from(".statement-text p", {
+        yPercent: -70,
+        opacity: .15,
 
-        y: 100,
+        scrollTrigger: {
 
+            trigger: ".hero",
+
+            start: "top top",
+
+            end: "bottom top",
+
+            scrub: 1.2
+
+        }
+
+    });
+
+
+    gsap.to(".hero-bottom", {
+
+        yPercent: 80,
         opacity: 0,
 
         scrollTrigger: {
 
-            trigger: ".statement",
+            trigger: ".hero",
 
-            start: "top 75%",
+            start: "top top",
 
-            end: "top 30%",
+            end: "70% top",
 
             scrub: 1
 
@@ -331,13 +338,106 @@ function startWebsiteAnimations() {
     });
 
 
-    /* -------------------------------------
+    /* Floating depth */
+
+    gsap.to(".float-one", {
+
+        xPercent: 100,
+        yPercent: -80,
+
+        scrollTrigger: {
+
+            trigger: ".hero",
+
+            start: "top top",
+
+            end: "bottom top",
+
+            scrub: 1.5
+
+        }
+
+    });
+
+
+    gsap.to(".float-two", {
+
+        xPercent: -100,
+        yPercent: 120,
+
+        rotation: 180,
+
+        scrollTrigger: {
+
+            trigger: ".hero",
+
+            start: "top top",
+
+            end: "bottom top",
+
+            scrub: 2
+
+        }
+
+    });
+
+
+    gsap.to(".float-three", {
+
+        xPercent: 60,
+        yPercent: -100,
+
+        scrollTrigger: {
+
+            trigger: ".hero",
+
+            start: "top top",
+
+            end: "bottom top",
+
+            scrub: 1.8
+
+        }
+
+    });
+
+
+    /* =================================================
+       STATEMENT
+    ================================================= */
+
+    gsap.from(".statement-text p", {
+
+        y: 160,
+
+        opacity: 0,
+
+        scale: .92,
+
+        scrollTrigger: {
+
+            trigger: ".statement",
+
+            start: "top 85%",
+
+            end: "top 25%",
+
+            scrub: 1.4
+
+        }
+
+    });
+
+
+    /* =================================================
        WORK TITLE
-    ------------------------------------- */
+    ================================================= */
 
     gsap.from(".work-heading h2", {
 
-        xPercent: -30,
+        xPercent: -60,
+
+        scale: 1.3,
 
         opacity: 0,
 
@@ -345,11 +445,11 @@ function startWebsiteAnimations() {
 
             trigger: ".work-heading",
 
-            start: "top 80%",
+            start: "top 90%",
 
-            end: "top 30%",
+            end: "top 20%",
 
-            scrub: 1
+            scrub: 1.5
 
         }
 
@@ -358,7 +458,9 @@ function startWebsiteAnimations() {
 
     gsap.to(".work-shadow", {
 
-        xPercent: 8,
+        xPercent: 15,
+
+        opacity: 1,
 
         scrollTrigger: {
 
@@ -368,39 +470,93 @@ function startWebsiteAnimations() {
 
             end: "bottom top",
 
-            scrub: true
+            scrub: 1.5
 
         }
 
     });
 
 
-    /* -------------------------------------
-       PROJECTS
-    ------------------------------------- */
+    /* =================================================
+       PROJECT VISUALS
+    ================================================= */
 
-    document.querySelectorAll(".project").forEach(project => {
+    document
+    .querySelectorAll(".project")
+    .forEach((project, index) => {
 
-        const image =
+        const visual =
             project.querySelector(".project-visual");
 
         const info =
             project.querySelector(".project-info");
 
 
-        gsap.from(image, {
+        /* Main reveal */
 
-            scale: .75,
+        gsap.fromTo(
+            visual,
 
-            opacity: 0,
+            {
+                clipPath: "inset(15% 15% 15% 15%)",
+                scale: 1.18,
+                rotation: index % 2 === 0 ? -3 : 3
+            },
 
-            rotation: gsap.utils.random(-8, 8),
+            {
+                clipPath: "inset(0% 0% 0% 0%)",
+                scale: 1,
+                rotation: 0,
+
+                scrollTrigger: {
+
+                    trigger: project,
+
+                    start: "top 90%",
+
+                    end: "top 20%",
+
+                    scrub: 1.5
+
+                }
+            }
+        );
+
+
+        /* Project image movement */
+
+        gsap.to(visual, {
+
+            yPercent: -12,
 
             scrollTrigger: {
 
                 trigger: project,
 
-                start: "top 85%",
+                start: "top bottom",
+
+                end: "bottom top",
+
+                scrub: 1.5
+
+            }
+
+        });
+
+
+        /* Project information */
+
+        gsap.from(info, {
+
+            x: -120,
+
+            opacity: 0,
+
+            scrollTrigger: {
+
+                trigger: project,
+
+                start: "top 75%",
 
                 end: "top 35%",
 
@@ -411,69 +567,55 @@ function startWebsiteAnimations() {
         });
 
 
-        gsap.from(info, {
+        /* Number */
 
-            x: -80,
+        gsap.from(
+            project.querySelector(".project-number"),
+            {
 
-            opacity: 0,
+                y: 50,
 
-            scrollTrigger: {
+                opacity: 0,
 
-                trigger: project,
+                scrollTrigger: {
 
-                start: "top 75%",
+                    trigger: project,
 
-                end: "top 40%",
+                    start: "top 80%",
 
-                scrub: 1
+                    end: "top 40%",
 
-            }
+                    scrub: 1
 
-        });
-
-
-        /* Image parallax */
-
-        gsap.to(image, {
-
-            yPercent: -8,
-
-            scrollTrigger: {
-
-                trigger: project,
-
-                start: "top bottom",
-
-                end: "bottom top",
-
-                scrub: true
+                }
 
             }
-
-        });
+        );
 
     });
 
 
-    /* -------------------------------------
+    /* =================================================
        ABOUT
-    ------------------------------------- */
+    ================================================= */
 
     gsap.from(".about-heading h2", {
 
-        y: 100,
+        y: 180,
 
         opacity: 0,
+
+        rotateX: 25,
 
         scrollTrigger: {
 
             trigger: ".about-section",
 
-            start: "top 75%",
+            start: "top 80%",
 
-            end: "top 30%",
+            end: "top 25%",
 
-            scrub: 1
+            scrub: 1.5
 
         }
 
@@ -482,7 +624,7 @@ function startWebsiteAnimations() {
 
     gsap.from(".about-copy", {
 
-        y: 100,
+        y: 120,
 
         opacity: 0,
 
@@ -490,78 +632,92 @@ function startWebsiteAnimations() {
 
             trigger: ".about-copy",
 
-            start: "top 80%",
+            start: "top 85%",
 
-            end: "top 40%",
+            end: "top 35%",
 
-            scrub: 1
+            scrub: 1.2
 
         }
 
     });
 
 
-    /* -------------------------------------
+    /* =================================================
        SERVICES
-    ------------------------------------- */
+    ================================================= */
 
-    gsap.from(".service", {
+    document
+    .querySelectorAll(".service")
+    .forEach((service, index) => {
 
-        x: -100,
+        gsap.from(service, {
 
-        opacity: 0,
+            x: index % 2 === 0 ? -120 : 120,
 
-        stagger: .12,
+            opacity: 0,
 
-        scrollTrigger: {
+            duration: 1,
 
-            trigger: ".services-list",
+            scrollTrigger: {
 
-            start: "top 80%",
+                trigger: service,
 
-            end: "top 30%",
+                start: "top 90%",
 
-            scrub: 1
+                end: "top 55%",
 
-        }
+                scrub: 1
+
+            }
+
+        });
 
     });
 
 
-    /* -------------------------------------
+    /* =================================================
        PROCESS
-    ------------------------------------- */
+    ================================================= */
 
-    gsap.from(".process-item", {
+    document
+    .querySelectorAll(".process-item")
+    .forEach((item, index) => {
 
-        x: 100,
+        gsap.from(item, {
 
-        opacity: 0,
+            x: 150,
 
-        stagger: .15,
+            opacity: 0,
 
-        scrollTrigger: {
+            rotate: index % 2 === 0 ? 2 : -2,
 
-            trigger: ".process-list",
+            scrollTrigger: {
 
-            start: "top 80%",
+                trigger: item,
 
-            end: "top 25%",
+                start: "top 90%",
 
-            scrub: 1
+                end: "top 55%",
 
-        }
+                scrub: 1
+
+            }
+
+        });
 
     });
 
 
-    /* -------------------------------------
+    /* =================================================
        CONTACT
-    ------------------------------------- */
+    ================================================= */
 
     gsap.from(".contact-heading h2", {
 
-        y: 150,
+        y: 180,
+
+        scale: .85,
 
         opacity: 0,
 
@@ -569,88 +725,140 @@ function startWebsiteAnimations() {
 
             trigger: ".contact-section",
 
-            start: "top 75%",
+            start: "top 80%",
 
-            end: "top 30%",
+            end: "top 25%",
 
-            scrub: 1
+            scrub: 1.5
 
         }
 
     });
 
 
+    /* =================================================
+       REFRESH
+    ================================================= */
+
+    setTimeout(() => {
+
+        ScrollTrigger.refresh();
+
+    }, 500);
+
 }
 
 
-/* =========================================
-   MOUSE PARALLAX
-========================================= */
+/* =====================================================
+   HERO MOUSE DEPTH
+===================================================== */
 
 const hero = document.querySelector(".hero");
 
-hero.addEventListener("mousemove", (e) => {
+if (hero) {
 
-    const x =
-        (e.clientX / window.innerWidth - .5);
+    hero.addEventListener("mousemove", (e) => {
 
-    const y =
-        (e.clientY / window.innerHeight - .5);
+        const x =
+            (e.clientX / window.innerWidth - .5);
+
+        const y =
+            (e.clientY / window.innerHeight - .5);
 
 
-    gsap.to(".float-one", {
+        gsap.to(".hero-title", {
 
-        x: x * 30,
+            x: x * 18,
+            y: y * 10,
 
-        y: y * 30,
+            duration: 1.2,
 
-        duration: .7,
+            ease: "power3.out",
 
-        ease: "power2.out"
+            overwrite: "auto"
+
+        });
+
+
+        gsap.to(".float-one", {
+
+            x: x * 45,
+            y: y * 30,
+
+            duration: 1,
+
+            ease: "power3.out",
+
+            overwrite: "auto"
+
+        });
+
+
+        gsap.to(".float-two", {
+
+            x: x * -70,
+            y: y * -40,
+
+            duration: 1.2,
+
+            ease: "power3.out",
+
+            overwrite: "auto"
+
+        });
+
+
+        gsap.to(".float-three", {
+
+            x: x * 30,
+            y: y * -30,
+
+            duration: 1.1,
+
+            ease: "power3.out",
+
+            overwrite: "auto"
+
+        });
 
     });
 
-
-    gsap.to(".float-two", {
-
-        x: x * -45,
-
-        y: y * -30,
-
-        duration: .8,
-
-        ease: "power2.out"
-
-    });
+}
 
 
-    gsap.to(".float-three", {
+/* =====================================================
+   BACK TO TOP
+===================================================== */
 
-        x: x * 20,
+const backTop =
+    document.querySelector(".footer > div:last-child");
 
-        y: y * -20,
+if (backTop) {
 
-        duration: .9,
+    backTop.addEventListener("click", () => {
 
-        ease: "power2.out"
+        lenis.scrollTo(0, {
+            duration: 2
+        });
 
     });
 
-});
+}
 
 
-/* =========================================
-   SMOOTH ANCHOR SCROLL
-========================================= */
+/* =====================================================
+   ANCHOR LINKS
+===================================================== */
 
-document.querySelectorAll('a[href^="#"]')
-.forEach(anchor => {
+document
+.querySelectorAll('a[href^="#"]')
+.forEach((link) => {
 
-    anchor.addEventListener("click", (e) => {
+    link.addEventListener("click", (e) => {
 
         const target =
             document.querySelector(
-                anchor.getAttribute("href")
+                link.getAttribute("href")
             );
 
         if (!target) return;
@@ -658,28 +866,9 @@ document.querySelectorAll('a[href^="#"]')
         e.preventDefault();
 
         lenis.scrollTo(target, {
-
-            offset: 0,
-
-            duration: 1.5
-
+            duration: 1.6,
+            offset: 0
         });
-
-    });
-
-});
-
-
-/* =========================================
-   BACK TO TOP
-========================================= */
-
-document.querySelector(".footer > div:last-child")
-.addEventListener("click", () => {
-
-    lenis.scrollTo(0, {
-
-        duration: 1.5
 
     });
 
