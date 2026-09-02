@@ -1757,3 +1757,111 @@ button {
     }
 
 }
+
+/* =====================================================
+   PREMIUM MOTION SYSTEM
+===================================================== */
+
+.hero,
+.statement,
+.work-section,
+.about-section,
+.services-section,
+.process-section,
+.contact-section {
+    will-change: transform;
+}
+
+
+/* Better project depth */
+
+.project-visual {
+    transform-origin: center center;
+    will-change: transform, clip-path;
+}
+
+
+/* Project content stays sharp */
+
+.project-info,
+.hero-title,
+.about-heading,
+.contact-heading {
+    will-change: transform, opacity;
+}
+
+
+/* Premium hover */
+
+.project-visual {
+    transition:
+        transform 0.8s cubic-bezier(.16,1,.3,1);
+}
+
+.project:hover .project-visual {
+    transform: scale(.985);
+}
+
+
+/* Text links */
+
+.text-link,
+.view-all,
+.contact-button {
+    will-change: transform;
+}
+
+
+/* Better service hover */
+
+.service {
+    cursor: pointer;
+}
+
+.service h3 {
+    transition:
+        transform .6s cubic-bezier(.16,1,.3,1);
+}
+
+.service:hover h3 {
+    transform: translateX(15px);
+}
+
+
+/* Process */
+
+.process-item {
+    will-change: transform;
+}
+
+
+/* Prevent ugly browser rendering */
+
+.hero-title,
+.reveal-word,
+.project-visual,
+.work-heading h2 {
+    backface-visibility: hidden;
+    transform-style: preserve-3d;
+}
+
+
+/* =====================================================
+   MOBILE MOTION
+===================================================== */
+
+@media (max-width: 800px) {
+
+    .hero-title {
+        transform: none !important;
+    }
+
+    .project-visual {
+        transform: none;
+    }
+
+    .project:hover .project-visual {
+        transform: none;
+    }
+
+}
