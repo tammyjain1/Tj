@@ -1791,17 +1791,6 @@ button {
 }
 
 
-/* Premium hover */
-
-.project-visual {
-    transition:
-        transform 0.8s cubic-bezier(.16,1,.3,1);
-}
-
-.project:hover .project-visual {
-    transform: scale(.985);
-}
-
 
 /* Text links */
 
